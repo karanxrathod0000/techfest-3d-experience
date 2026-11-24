@@ -137,6 +137,23 @@
             align-items: center;
         }
 
+        .nav-toggle {
+            display: none;
+            min-height: 44px;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid var(--cyan);
+            border-radius: 4px;
+            background: var(--bg-color);
+            color: var(--cyan);
+            font: 600 0.85rem 'Orbitron', sans-serif;
+        }
+
+        .nav-toggle:focus-visible,
+        .nav-links a:focus-visible {
+            outline: 2px solid var(--pink);
+            outline-offset: 5px;
+        }
+
         .nav-links a {
             color: var(--text);
             text-decoration: none;
@@ -551,7 +568,26 @@
 
         @media (max-width: 900px) {
             #hero h1 { font-size: 3.5rem; }
-            .nav-links { display: none; }
+            nav { padding: 1rem; flex-wrap: wrap; gap: 1rem; }
+            .nav-logo { font-size: clamp(1rem, 3.5vw, 1.4rem); gap: 0.4rem; }
+            .nav-toggle { display: block; }
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding: 1rem;
+                max-height: calc(100dvh - 80px);
+                overflow-y: auto;
+                background: var(--bg-color);
+                border-bottom: 1px solid var(--cyan);
+            }
+            nav.nav-open .nav-links { display: flex; }
+            .nav-links a { padding: 0.8rem; min-height: 44px; }
             .stat-number { font-size: 4rem; }
             .section-title { font-size: 3rem; }
             #experience h2 { font-size: 3rem; }
@@ -578,9 +614,10 @@
         <a href="#" class="btn" style="padding: 0.8rem 2rem; font-size: 1rem;">Explore</a>
     </div>
 
-    <nav class="glass" id="navbar">
+    <nav class="glass" id="navbar" aria-label="Main navigation">
         <div class="nav-logo">TECHFEST <span>30TH</span></div>
-        <div class="nav-links">
+        <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <div class="nav-links" id="nav-links">
             <a href="#hero">Initiate</a>
             <a href="#events">Exhibits</a>
             <a href="#stats">Telemetry</a>
@@ -654,6 +691,54 @@
             <p class="copyright">&copy; 2025 Techfest, IIT Bombay. 30th Edition. All Rights Reserved.</p>
         </div>
     </footer>
+
+    <!-- Navigation works independently of the 3D dependencies. -->
+    <script>
+        (() => {
+            const navbar = document.getElementById('navbar');
+            const toggle = document.getElementById('nav-toggle');
+            const links = document.getElementById('nav-links');
+            const mobile = window.matchMedia('(max-width: 900px)');
+
+            function setMenuOpen(open, restoreFocus = false) {
+                navbar.classList.toggle('nav-open', open);
+                toggle.setAttribute('aria-expanded', String(open));
+                if (restoreFocus) toggle.focus();
+            }
+
+            toggle.addEventListener('click', () => {
+                setMenuOpen(toggle.getAttribute('aria-expanded') !== 'true');
+            });
+
+            navbar.addEventListener('click', (event) => {
+                // Do not activate a 3D exhibit underneath a navigation control.
+                event.stopPropagation();
+                if (mobile.matches && event.target.closest('a')) setMenuOpen(false, true);
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!navbar.contains(event.target)) setMenuOpen(false);
+            });
+
+            navbar.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+                    event.preventDefault();
+                    setMenuOpen(false, true);
+                }
+            });
+
+            navbar.addEventListener('focusout', (event) => {
+                if (!navbar.contains(event.relatedTarget)) setMenuOpen(false);
+            });
+
+            mobile.addEventListener('change', () => {
+                const focused = document.activeElement;
+                setMenuOpen(false);
+                if (mobile.matches && links.contains(focused)) toggle.focus();
+                else if (!mobile.matches && focused === toggle) links.querySelector('a').focus();
+            });
+        })();
+    </script>
 
     <!-- GSAP for DOM animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
